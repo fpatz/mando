@@ -59,7 +59,7 @@ class Program(object):
         :param name: If given, a different name for the command. The default
             one is ``func.__name__``.'''
         func_name = func.__name__
-        name = func_name if name is None else name
+        name = func_name.replace("_", "-") if name is None else name
         argspec = inspect.getargspec(func)
         self.argspecs[func_name] = argspec
         argz = izip_longest(reversed(argspec.args), reversed(argspec.defaults
@@ -73,6 +73,12 @@ class Program(object):
                                                description=cmd_desc or None,
                                                **kwargs)
         for a, kw in self.analyze_func(func, doc, argz, argspec.varargs):
+            a = tuple(option.replace("_", "-")
+                      for option in a)
+            a = tuple(option.replace("--", "--no-")
+                      if kw.get('default') is True
+                      else option
+                      for option in a)
             subparser.add_argument(*a, **purify_kwargs(kw))
         subparser.set_defaults(**{_DISPATCH_TO: func})
         return func
